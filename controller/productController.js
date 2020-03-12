@@ -96,7 +96,7 @@ module.exports = {
     },
     getStockDetail: (req, res) => {
         console.log(req.query)
-        let sql = `select p.id, sz.id as sizeID, sz.size, s.stock from tb_products p join tb_stock s
+        let sql = `select p.id, sz.id as sizeID, sz.size, s.id as stockID from tb_products p join tb_stock s
         join tb_sizes sz on p.id=s.productID
         and sz.id=s.sizeID where p.id=${req.params.id};`
         db.query(sql, (err, results) => {

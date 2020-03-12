@@ -61,19 +61,42 @@ module.exports = {
                 }
                 console.log('Successfully send payment virtual account')
             })
-            let sqlMove = `INSERT INTO tb_history ( invoice, userID, productID, sizeID, qty, price, status, transactionID ) 
-                            SELECT 'LEAD_${invoice}', c.userID, c.productID, c.sizeID, c.qty, c.price, 'Unpaid', ${results.insertId} 
+            let sqlMove = `INSERT INTO tb_history ( invoice, userID, productID, stockID, qty, price, status, transactionID ) 
+                            SELECT 'LEAD_${invoice}', c.userID, c.productID, c.stockID, c.qty, c.price, 'Unpaid', ${results.insertId} 
                             FROM tb_cart c WHERE c.userID =${req.user.id};`
             db.query(sqlMove, (err, results) => {
                 if (err) {
                     return res.status(500).send(err)
                 }
-                let sqlClear = `delete from tb_cart where userID = ${req.user.id};`
-                db.query(sqlClear, (err, results) => {
+                let sqlHistory = `Select stockID,qty from tb_history where invoice = 'LEAD_${invoice}';`
+                // db.query(sqlUpdateStock, (err, results) => {
+                //     if (err) {
+                //         res.status(500).send(err)
+                //     }
+                //     // return res.status(200).send(results)
+                // let sqlUpdateStock = `delete from tb_cart where userID = ${req.user.id};`
+                // db.query(sqlUpdateStock, (err, results) => {
+                //     if (err) {
+                //         res.status(500).send(err)
+                //     }
+                //     // return res.status(200).send(results)
+                // })
+                // return res.status(200).send(results)
+                // let sqlClear = `delete from tb_cart where userID = ${req.user.id};`
+                db.query(sqlHistory, (err, results) => {
                     if (err) {
                         res.status(500).send(err)
                     }
                     // return res.status(200).send(results)
+                    results.map((val) => {
+                        let sqlUpdateStock = `update tb_stock set stock=stock-${val.qty} where id=${val.stockID};`
+                        db.query(sqlUpdateStock, (err, resultsUpSt) => {
+                            if (err) {
+                                res.status(500).send(err)
+                            }
+                            console.log(resultsUpSt)
+                        })
+                    })
                 })
                 return res.status(200).send(results)
             });
@@ -98,17 +121,19 @@ module.exports = {
     getDetailTransaction: (req, res) => {
         let sql = ''
         if (req.user.role === 'admin') {
-            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price from tb_transactions t join tb_history h on t.invoice = h.invoice 
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price 
+            from tb_transactions t join tb_history h on t.invoice = h.invoice 
             join tb_users u on h.userID = u.id
             join tb_products p on h.productID = p.id 
-            join tb_sizes sz on h.sizeID = sz.id  
-            join tb_stock st on st.sizeID = h.sizeID and st.productID = h.productID;`
+            join tb_stock st on st.id = h.stockID
+            join tb_sizes sz on st.sizeID = sz.id;`
         } else {
-            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price from tb_transactions t join tb_history h on t.invoice = h.invoice 
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price 
+            from tb_transactions t join tb_history h on t.invoice = h.invoice 
             join tb_users u on h.userID = u.id
             join tb_products p on h.productID = p.id 
-            join tb_sizes sz on h.sizeID = sz.id  
-            join tb_stock st on st.sizeID = h.sizeID and st.productID = h.productID where h.userID=${req.user.id}`
+            join tb_stock st on st.id = h.stockID
+            join tb_sizes sz on st.sizeID = sz.id where h.userID=${req.user.id}`
         }
         db.query(sql, (err, results) => {
             if (err) {

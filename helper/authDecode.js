@@ -13,7 +13,7 @@ module.exports = {
                     })
                 }
                 req.user = decoded  // hasil decode dari token
-                console.log(req.user)
+                // console.log(req.user)
                 next()
             })
         } else {

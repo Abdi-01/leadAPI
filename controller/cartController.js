@@ -12,16 +12,15 @@ module.exports = {
 
     },
     getCart: (req, res) => {
-        let sql = `select c.id,c.userID,s.username, p.name, p.imagepath, sz.size, c.qty, c.price 
-        from tb_users s join tb_cart c join tb_products p 
-        on s.id = c.userID and p.id = c.productID 
-        join tb_sizes sz join tb_stock st 
-        on sz.id = st.sizeID and c.id = st.id where s.id = ${req.params.id};`
+        let sql = `select c.id,c.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,c.qty, c.price from tb_cart c join tb_users u on c.userID = u.id
+        join tb_products p on c.productID = p.id 
+        join tb_stock st on st.id = c.stockID 
+        join tb_sizes sz on sz.id = st.sizeID where u.id = ${req.user.id};`
         db.query(sql, (err, results) => {
             if (err) {
-                console.log(res.status(500).send(err))
+                return res.status(500).send(err)
             }
-            res.status(200).send(results)
+            return res.status(200).send(results)
         });
     },
     checkoutCart: (req, res) => {

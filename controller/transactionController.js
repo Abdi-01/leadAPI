@@ -1,11 +1,13 @@
 const db = require('../database')
 const transporter = require('../helper/nodemailer');
+const { uploader } = require('../helper/uploader');
+const fs = require('fs');
 const hbs = require("nodemailer-express-handlebars")
 
 module.exports = {
     addToTransaction: (req, res) => {
         console.log(req.body)
-        var char= `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ`;
+        var char = `0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ`;
         let invoice = '';
         var len = char.length
         for (let i = 0; i < 6; i++) {
@@ -13,8 +15,8 @@ module.exports = {
         }
 
         let trans = {
-            invoice:`LEAD#${invoice}`,
-            userID: req.body.userID,
+            invoice: `LEAD_${invoice}`,
+            userID: req.user.id,
             cartPrice: req.body.cartPrice,
             shippingPrice: req.body.shippingPrice,
             payment: req.body.payment,
@@ -44,10 +46,10 @@ module.exports = {
             let mailOptions = {
                 from: 'Admin <leadwear01@gmail.com>',
                 to: 'abdialghi@gmail.com',
-                subject: 'Payment',
+                subject: 'Payment Order',
                 template: 'payment',
                 context: {
-                    name: req.body.username,
+                    name: req.user.username,
                     totalPayment: req.body.payment,
                     pva: req.body.mva
                 }
@@ -59,14 +61,14 @@ module.exports = {
                 }
                 console.log('Successfully send payment virtual account')
             })
-            let sqlMove = `INSERT INTO tb_history ( invoice, userID, productID, stockID, qty, price, status, transactionID ) 
-                            SELECT 'LEAD#${invoice}', c.userID, c.productID, c.stockID, c.qty, c.price, 'Unpaid', ${results.insertId} 
-                            FROM tb_cart c WHERE c.userID =${req.params.uID};`
+            let sqlMove = `INSERT INTO tb_history ( invoice, userID, productID, sizeID, qty, price, status, transactionID ) 
+                            SELECT 'LEAD_${invoice}', c.userID, c.productID, c.sizeID, c.qty, c.price, 'Unpaid', ${results.insertId} 
+                            FROM tb_cart c WHERE c.userID =${req.user.id};`
             db.query(sqlMove, (err, results) => {
                 if (err) {
                     return res.status(500).send(err)
                 }
-                let sqlClear = `delete from tb_cart where userID = ${req.params.uID};`
+                let sqlClear = `delete from tb_cart where userID = ${req.user.id};`
                 db.query(sqlClear, (err, results) => {
                     if (err) {
                         res.status(500).send(err)
@@ -77,15 +79,119 @@ module.exports = {
             });
         })
     },
-    getTransaction:(req,res)=>{
-        let sql = `SELECT * FROM tb_transactions where userID=${req.user.id}`
+    getTransaction: (req, res) => {
+        let sql = ''
+        if (req.user.role === 'admin') {
+            sql = `SELECT t.*,u.username FROM tb_transactions t join tb_users u on t.userID = u.id`
+        } else {
+            sql = `SELECT t.*,u.username FROM tb_transactions t join tb_users u on t.userID = u.id where t.userID=${req.user.id}`
+        }
         db.query(sql, (err, results) => {
             if (err) {
                 console.log(res.status(500).send(err))
             }
-            console.log(req.user.username)
-            console.log(results)
+            // console.log(req.user.username)
+            // console.log(results)
             return res.status(200).send(results)
         });
+    },
+    getDetailTransaction: (req, res) => {
+        let sql = ''
+        if (req.user.role === 'admin') {
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price from tb_transactions t join tb_history h on t.invoice = h.invoice 
+            join tb_users u on h.userID = u.id
+            join tb_products p on h.productID = p.id 
+            join tb_sizes sz on h.sizeID = sz.id  
+            join tb_stock st on st.sizeID = h.sizeID and st.productID = h.productID;`
+        } else {
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price from tb_transactions t join tb_history h on t.invoice = h.invoice 
+            join tb_users u on h.userID = u.id
+            join tb_products p on h.productID = p.id 
+            join tb_sizes sz on h.sizeID = sz.id  
+            join tb_stock st on st.sizeID = h.sizeID and st.productID = h.productID where h.userID=${req.user.id}`
+        }
+        db.query(sql, (err, results) => {
+            if (err) {
+                console.log(res.status(500).send(err))
+            }
+            // console.log(req.user.username)
+            // console.log(results)
+            return res.status(200).send(results)
+        });
+    },
+    getStockUpdate: (req, res) => {
+        let sql = `select (st.stock-c.qty) as newStock from tb_stock st join tb_cart c on c.productId = st.productID
+        join tb_sizes sz on c.sizeID = sz.id and st.sizeID = c.sizeID where userID=${req.params.id}`
+        db.query(sql, (err, results) => {
+            if (err) {
+                return res.status(500).send(err)
+            }
+            var arr = []
+            results.map((val) => {
+                arr.push(val.newStock)
+            })
+            console.log(arr)
+            let sql = `UPDATE tb_stock set?;`
+            db.query(sql, [req.body.order], (err, results) => {
+                if (err) {
+                    return res.status(500).send(err)
+                }
+                return res.status(200).send(results)
+            });
+            return res.status(200).send(results)
+        });
+    },
+    addTransferReceipt: (req, res) => {
+        console.log('uploaderEdit')
+        console.log(req.query.invoice)
+        // console.log(req.files)
+        try {
+            const path = '/transfers'
+            const upload = uploader(path, 'TF').fields([{ name: 'image' }])
+            upload(req, res, (err) => {
+                if (err) {
+                    return res.status(500).send({ message: 'error' })
+                }
+                const { image } = req.files;
+                console.log(image)
+                // console.log('edit', req.body.data)
+                const imagePath = image ? path + '/' + image[0].filename : null
+                // data.imagepayment = imagePath
+                let sql = `UPDATE tb_transactions SET imgpayment='${imagePath}' WHERE invoice = '${req.query.invoice}';`;
+                db.query(sql, (err, results) => {
+                    if (err) {
+                        console.log(err)
+                        fs.unlinkSync('./public' + imagePath)//delete file
+                        return res.status(500).send({ message: 'error' })
+                    }
+                    return res.status(200).send(results)
+                })
+            })
+        }
+        catch (err) {
+            return res.status(500).send({ message: 'error' })
+        }
+    },
+    verifieTransaction: (req, res) => {
+        console.log(req.body)
+        let sql = `UPDATE tb_transactions SET status ='${req.body.status}' WHERE id = ${db.escape(req.query.id)};`;
+        db.query(sql, (err, results) => {
+            if (err) {
+                console.log(err)
+                return res.status(500).send({ message: 'error' })
+            }
+            return res.status(200).send(results)
+        })
+    },
+    updateStock: (req, res) => {
+        console.log(req.body)
+        let sql = `update tb_stock set stock=stock-1 where id=;`
+        db.query(sql, (err, results) => {
+            if (err) {
+                console.log(err)
+                return res.status(500).send({ message: 'error' })
+            }
+            return res.status(200).send(results)
+        })
     }
 }

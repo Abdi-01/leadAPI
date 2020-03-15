@@ -9,11 +9,11 @@ module.exports = {
             destination : (req, file, cb) => {
                 const dir = defaultPath + destination;
                 if(fs.existsSync(dir)){
-                    console.log(dir, 'exists');
+                    // console.log(dir, 'exists');
                     cb(null, dir);
                 }else{
                     fs.mkdir(dir, { recursive: true }, err => cb(err, dir))
-                    console.log(dir, 'make')
+                    // console.log(dir, 'make')
                 }
             },
             filename : (req, file, cb) => {

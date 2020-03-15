@@ -29,11 +29,12 @@ module.exports = {
             weight: form.weight,
             courier: form.courier // bisa merequest satu atau beberapa kurir sekaligus
         }
+        // console.log(form)
         const cost = request.post('cost', data)
         cost.then(cst => {
             let cstN = JSON.parse(cst)
             let costPrice = cstN.rajaongkir.results[0].costs[1].cost[0].value //hanya ambil biaya
-            console.log(costPrice)
+            // console.log(costPrice)
             return res.send({price:costPrice});
         })
     }

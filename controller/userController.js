@@ -7,7 +7,7 @@ const hbs = require("nodemailer-express-handlebars")
 module.exports = {
     getUsers: (req, res) => {//req/request = data yang diambil dari front end, res = respons
         let sql = 'SELECT * FROM tb_users;'
-        console.log(req.query)
+        // console.log(req.query)
         db.query(sql, (err, results) => {//data gagal akan masuk err, kalo benar masuk results==========> db = hasil export dari mysql yang diakses pada folder databes
             if (err) {
                 return res.status(500).send(err)
@@ -18,17 +18,17 @@ module.exports = {
     login: (req, res) => {
         const { username, password } = req.body
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(password).digest("hex")
-        console.log(hashPassword)
+        // console.log(hashPassword)
         let sql = `SELECT * FROM tb_users where username='${username}' and password='${hashPassword}';`
         db.query(sql, (err, results) => {
             if (err) {
                 res.status(500).send(err)
             }
-            console.log(results)
+            // console.log(results)
             if (results.length !== 0) {
                 let { id, username, email, phone, password, role, status } = results[0]
                 const token = createJWTToken({ id, username, email, phone, password, role, status })
-                console.log(token)
+                // console.log(token)
                 return res.status(200).send({ id, username, email, phone, role, token, status })
             }
             else {
@@ -37,14 +37,14 @@ module.exports = {
         })
     },
     keepLogin: (req, res) => {
-        // console.log('Masuk')
-        // console.log(req.user.id)
+        // // console.log('Masuk')
+        // // console.log(req.user.id)
         let sql = `Select * from tb_users where id=${req.user.id};`
         db.query(sql, (err, results) => {
             if (err) {
                 res.status(500).send(err)
             }
-            console.log(results)
+            // console.log(results)
             if (results.length !== 0) {
                 let { id, username, email, phone, password, role, status } = results[0]
                 const token = createJWTToken({ id, username, email, phone, password, role, status })
@@ -53,7 +53,7 @@ module.exports = {
         })
     },
     editProfile: (req, res) => {
-        // console.log(res.query.id)
+        // // console.log(res.query.id)
         // let sqlget = `SELECT * FROM tb_users where id=${req.user.id};` //diambil dari hasil decode auth token
         let sqlget = `SELECT * FROM tb_users where id=${req.params.id};`
         db.query(sqlget, (err, resultsGet) => {//data gagal akan masuk err, kalo benar masuk results
@@ -83,7 +83,7 @@ module.exports = {
         })
     },
     editPassword: (req, res) => {
-        // console.log(res.query.id)
+        // // console.log(res.query.id)
         let { oldpass, newpass } = req.body
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(oldpass).digest("hex")
         let hashPasswordNew = Crypto.createHmac("sha256", "uniqueKey").update(newpass).digest("hex")
@@ -114,11 +114,11 @@ module.exports = {
         })
     },
     register: (req, res) => {
-        // console.log(req.body)
+        // // console.log(req.body)
         let { username, password, phone, email, role } = req.body
 
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(password).digest("hex")
-        console.log(hashPassword)
+        // console.log(hashPassword)
 
         var karakter = `0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ`;
         let OTP = '';
@@ -137,11 +137,11 @@ module.exports = {
                 if (err) {
                     return res.status(500).send(err)
                 }
-                // console.log(results)
+                // // console.log(results)
                 var { id, username, email, phone, password, role, status } = results[0]
                 const token = createJWTToken({ id, username, email, phone, password, role, status })
-                console.log('success')
-                // console.log(status)
+                // console.log('success')
+                // // console.log(status)
                 // let verificationLink = `http://localhost:3000/verification?username=${username}&password=${hashPassword}`//link kehalaman verification
                 let verificationLink = `http://localhost:3000/verification?${token}`//link kehalaman verification
 
@@ -171,7 +171,7 @@ module.exports = {
                 }
                 transporter.sendMail(mailOptions, (err, resB) => {
                     if (err) {
-                        console.log(err)
+                        // console.log(err)
                         return res.status(500).send({ message: err })
                     }// return res.status(200).send({
                     //     id,
@@ -189,7 +189,7 @@ module.exports = {
         })
     },
     getUsersSearch: (req, res) => {
-        console.log('cari', req.params.search)
+        // console.log('cari', req.params.search)
         let sql = `SELECT * FROM tb_users where username='${req.params.search}';`
         db.query(sql, (err, results) => {//data gagal akan masuk err, kalo benar masuk results
             if (err) {
@@ -203,19 +203,19 @@ module.exports = {
 
         db.query(sqlget, (err, results) => {
             if (err) {
-                console.log(err)
+                // console.log(err)
                 return res.status(500).send(err)
             }
-            console.log(results)
+            // console.log(results)
             let sqlverified = `update tb_users set status = 'Verified' where username = '${req.user.username}' and status='${req.body.otp}';`
             db.query(sqlverified, (erra, resultsB) => {
                 if (erra) {
                     return res.status(500).send(erra)
                 }
-                console.log('Verified Success')
-                // console.log(resultsB.message)
+                // console.log('Verified Success')
+                // // console.log(resultsB.message)
                 // return res.status(200).send(resultsB)
-                console.log('av', results)
+                // console.log('av', results)
                 let { id, username, email, phone, password, role, status } = results[0]
                 const token = createJWTToken({ id, username, email, phone, password, role, status })
                 return res.status(200).send({ id, username, email, phone, role, status, token })

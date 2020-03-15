@@ -11,12 +11,13 @@ app.use(bearerToken())//mengambil token berdasarkan header yang dikirim oleh fro
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.static('public'))//lokasi folder gambar pada API
 
-const { userRouter, productRouter, cartRouter, transactionRouter, rajaOngkirRouter } = require('./router')
+const { userRouter, productRouter, cartRouter, transactionRouter, rajaOngkirRouter,resultsRouter } = require('./router')
 
 app.use('/users', userRouter) ///untuk manipulasi data disebut endpoint
 app.use('/products', productRouter) ///untuk manipulasi data disebut endpoint
 app.use('/carts', cartRouter) ///untuk manipulasi data disebut endpoint
 app.use('/transactions', transactionRouter) ///untuk manipulasi data disebut endpoint
+app.use('/results', resultsRouter) ///untuk manipulasi data disebut endpoint
 app.use('/ongkir', rajaOngkirRouter) ///untuk manipulasi data disebut endpoint
 
 app.listen(port, () => { console.log(port) })//port access backend di localhost

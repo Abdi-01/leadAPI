@@ -19,7 +19,12 @@ module.exports = {
         const { username, password } = req.body
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(password).digest("hex")
         // console.log(hashPassword)
-        let sql = `SELECT * FROM tb_users where username='${username}' and password='${hashPassword}';`
+        let sql = ''
+        if (username.includes("@") === false) {
+            sql = `SELECT * FROM tb_users where username='${username}' and password='${hashPassword}';`
+        } else {
+            sql = `SELECT * FROM tb_users where email='${username}' and password='${hashPassword}';`
+        }
         db.query(sql, (err, results) => {
             if (err) {
                 res.status(500).send(err)
@@ -55,7 +60,7 @@ module.exports = {
     editProfile: (req, res) => {
         // // console.log(res.query.id)
         // let sqlget = `SELECT * FROM tb_users where id=${req.user.id};` //diambil dari hasil decode auth token
-        let sqlget = `SELECT * FROM tb_users where id=${req.params.id};`
+        let sqlget = `SELECT * FROM tb_users where id=${req.user.id};`
         db.query(sqlget, (err, resultsGet) => {//data gagal akan masuk err, kalo benar masuk results
             if (err) {
                 res.status(500).send(err)
@@ -63,17 +68,20 @@ module.exports = {
             else if (resultsGet && resultsGet.length > 0) {
                 // res.status(200).send(resultsGet[0].username)
                 let { newuser, newemail, newphone } = req.body
-                let sqledit = `UPDATE tb_users SET username = '${newuser}', email = '${newemail}', phone = '${newphone}' WHERE id=${req.params.id};`
+                let sqledit = `UPDATE tb_users SET username = '${newuser}', email = '${newemail}', phone = '${newphone}' WHERE id=${req.user.id};`
                 db.query(sqledit, (err, results) => {
                     if (err) {
                         res.status(500).send(err)
                     }
-                    let sqlget2 = `SELECT * FROM tb_users where username='${usernameNew}';`
-                    db.query(sqlget2, (err, resultsUpdate) => {
+                    let sqlget2 = `SELECT * FROM tb_users where username='${newuser}';`
+                    db.query(sqlget2, (err, resultsNew) => {
                         if (err) {
                             res.status(500).send(err)
                         }
-                        res.status(200).send(resultsUpdate)
+                        // res.status(200).send(resultsUpdate)
+                        let { id, username, email, phone, password, role, status } = resultsNew[0]
+                        const token = createJWTToken({ id, username, email, phone, password, role, status })
+                        return res.status(200).send({ id, username, email, phone, role, status, token })
                     })
                 })
             }
@@ -87,29 +95,31 @@ module.exports = {
         let { oldpass, newpass } = req.body
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(oldpass).digest("hex")
         let hashPasswordNew = Crypto.createHmac("sha256", "uniqueKey").update(newpass).digest("hex")
-        let sqlget = `SELECT * FROM tb_users where id=${req.params.id} and password='${hashPassword}';`
+        let sqlget = `SELECT * FROM tb_users where id=${req.user.id} and password='${hashPassword}';`
         db.query(sqlget, (err, resultsGet) => {//data gagal akan masuk err, kalo benar masuk results
             if (err) {
                 res.status(500).send(err)
             }
             else if (resultsGet && resultsGet.length > 0) {
                 // res.status(200).send(resultsGet[0].username)
-                let sqledit = `UPDATE tb_users SET password = '${hashPasswordNew}' WHERE id=${req.params.id};`
+                let sqledit = `UPDATE tb_users SET password = '${hashPasswordNew}' WHERE id=${req.user.id};`
                 db.query(sqledit, (err, results) => {
                     if (err) {
                         res.status(500).send(err)
                     }
-                    let sqlget2 = `SELECT * FROM tb_users where id=${req.params.id};`
-                    db.query(sqlget2, (err, resultsUpdate) => {
+                    let sqlget2 = `SELECT * FROM tb_users where id=${req.user.id};`
+                    db.query(sqlget2, (err, resultsNew) => {
                         if (err) {
                             res.status(500).send(err)
                         }
-                        res.status(200).send(resultsUpdate)
+                        let { id, username, email, phone, password, role, status } = resultsNew[0]
+                        const token = createJWTToken({ id, username, email, phone, password, role, status })
+                        return res.status(200).send({ id, username, email, phone, role, status, token })
                     })
                 })
             }
             else {
-                res.status(200).send('<h2>USER GAG ADA</h2>')
+                res.status(200).send('wrong')
             }
         })
     },
@@ -160,7 +170,7 @@ module.exports = {
 
                 let mailOptions = {
                     from: 'Admin <leadwear01@gmail.com>',
-                    to: 'abdialghi@gmail.com',
+                    to: email,
                     subject: 'Confirmation Register',
                     template: 'verify-email',
                     context: {
@@ -190,7 +200,7 @@ module.exports = {
     },
     getUsersSearch: (req, res) => {
         // console.log('cari', req.params.search)
-        let sql = `SELECT * FROM tb_users where username='${req.params.search}';`
+        let sql = `SELECT * FROM tb_users where username='${req.query.user}' and email='${req.query.email}';`
         db.query(sql, (err, results) => {//data gagal akan masuk err, kalo benar masuk results
             if (err) {
                 return res.status(500).send(err)

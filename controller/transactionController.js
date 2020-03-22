@@ -28,7 +28,7 @@ module.exports = {
         let sql = 'insert into tb_transactions set ?';
         db.query(sql, trans, (err, results) => {
             if (err) {
-                // console.log(err)
+                console.log(err)
                 return res.status(500).send(err)
             }
             const handlebarOptions = {
@@ -46,7 +46,7 @@ module.exports = {
 
             let mailOptions = {
                 from: 'Admin <leadwear01@gmail.com>',
-                to: 'abdialghi@gmail.com',
+                to: req.user.email,
                 subject: 'Payment Order',
                 template: 'payment',
                 context: {
@@ -57,7 +57,7 @@ module.exports = {
             }
             transporter.sendMail(mailOptions, (err, resB) => {
                 if (err) {
-                    // console.log(err)
+                    console.log(err)
                     return res.status(500).send({ message: err })
                 }
                 // console.log('Successfully send payment virtual account')
@@ -68,7 +68,7 @@ module.exports = {
                 SET SQL_SAFE_UPDATES=1; -- Menyalakan safe update`;
                 db.query(sql, (err, results) => {
                     if (err) {
-                        // console.log(err)
+                        console.log(err)
                         fs.unlinkSync('./public' + imagePath)//delete file
                         return res.status(500).send({ message: 'error' })
                     }
@@ -80,11 +80,13 @@ module.exports = {
                                 FROM tb_cart c WHERE c.userID =${req.user.id};`
                 db.query(sqlMove, (err, results) => {
                     if (err) {
+                        console.log(err)
                         return res.status(500).send(err)
                     }
                     let sqlHistory = `Select stockID,qty from tb_history where invoice = 'LEAD_${invoice}';`
                     db.query(sqlHistory, (err, results) => {
                         if (err) {
+                            console.log(err)
                             res.status(500).send(err)
                         }
                         // return res.status(200).send(results)
@@ -92,17 +94,19 @@ module.exports = {
                             let sqlUpdateStock = `update tb_stock set stock=stock-${val.qty} where id=${val.stockID};`
                             db.query(sqlUpdateStock, (err, resultsUpSt) => {
                                 if (err) {
+                                    console.log(err)
                                     res.status(500).send(err)
                                 }
-                                // console.log(resultsUpSt)
+                                // consolelog(resultsUpSt)
+                                let sqlClear = `delete from tb_cart where userID = ${req.user.id};`
+                                db.query(sqlClear, (err, results) => {
+                                    if (err) {
+                                        console.log(err)
+                                        res.status(500).send(err)
+                                    }
+                                    // return res.status(200).send(results)
+                                })
                             })
-                        })
-                        let sqlClear = `delete from tb_cart where userID = ${req.user.id};`
-                        db.query(sqlClear, (err, results) => {
-                            if (err) {
-                                res.status(500).send(err)
-                            }
-                            // return res.status(200).send(results)
                         })
                     })
                     return res.status(200).send(results)
@@ -129,15 +133,15 @@ module.exports = {
     getDetailTransaction: (req, res) => {
         let sql = ''
         if (req.user.role === 'admin') {
-            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price 
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price, 
             t.orderType from tb_transactions t join tb_history h on t.invoice = h.invoice 
             join tb_users u on h.userID = u.id
             join tb_products p on h.productID = p.id 
             join tb_stock st on st.id = h.stockID
-            join tb_sizes sz on st.sizeID = sz.id where t.status='${req.params.status}';`
+            join tb_sizes sz on st.sizeID = sz.id where t.status = '${req.params.status}';`
         } else {
-            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price 
-            from tb_transactions t join tb_history h on t.invoice = h.invoice 
+            sql = `select h.id,h.invoice,h.userID, u.username, p.name, p.imagepath, sz.size, p.price as productPrice,h.qty, h.price, 
+            t.orderType from tb_transactions t join tb_history h on t.invoice = h.invoice 
             join tb_users u on h.userID = u.id
             join tb_products p on h.productID = p.id 
             join tb_stock st on st.id = h.stockID

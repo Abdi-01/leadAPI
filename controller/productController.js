@@ -71,12 +71,12 @@ module.exports = {
             return res.status(500).send({ message: 'error' })
         }
     },
-    addStock: (req, res) => {
-        // console.log(req.body.productID)
-        // console.log(req.body.stock)
-        let sql = `INSERT INTO tb_stock (productID,sizeID,stock) values ?;`
+    addeditStock: (req, res) => {
+        let sql = `INSERT INTO tb_stock (id, productID, sizeID, stock) values ? 
+                    on duplicate key update stock=values(stock);`
         db.query(sql, [req.body.stock], (err, results) => {
             if (err) {
+                console.log(err)
                 return res.status(500).send(err)
             }
             return res.status(200).send(results)
@@ -84,7 +84,7 @@ module.exports = {
     },
     getStock: (req, res) => {
         // console.log(req.query)
-        let sql = `select p.id,sz.size,s.stock from tb_products p join tb_stock s
+        let sql = `select p.id,sz.size,s.stock,s.id as stockId from tb_products p join tb_stock s
         join tb_sizes sz on p.id=s.productID
         and sz.id=s.sizeID ;`
         db.query(sql, (err, results) => {
@@ -205,11 +205,11 @@ module.exports = {
         });
     },
     deleteProduct: (req, res) => {
-        0
-        // console.log(req.query)
-        let sql = `delete from tb_products where id =${req.query.id} and imagepath='${req.query.imagepath}';`
+        console.log(req.query)
+        let sql = `delete from tb_products where id =${db.escape(req.query.idproduct)};`
         db.query(sql, (err, results) => {
             if (err) {
+                console.log(err)
                 res.send(err)
             }
             fs.unlinkSync('./public' + req.query.imagepath)
@@ -235,6 +235,7 @@ module.exports = {
             const upload = uploader(path, 'IMG').fields([{ name: 'image' }])
             upload(req, res, (err) => {
                 if (err) {
+                    console.log(err)
                     return res.status(500).send({ message: 'error' })
                 }
                 const { image } = req.files;
@@ -245,7 +246,7 @@ module.exports = {
                 if (image === undefined) {
                     db.query(sql, data, (err, results) => {
                         if (err) {
-                            // console.log(err)
+                            console.log(err)
                             return res.status(500).send({ message: 'error' })
                         }
                         return res.status(200).send(results)
@@ -263,13 +264,13 @@ module.exports = {
                             data.imagepath = imagePath
                             db.query(sql, data, (err, results) => {
                                 if (err) {
-                                    // console.log(err)
+                                    console.log(err)
                                     fs.unlinkSync('./public' + imagePath)//delete file
                                     return res.status(500).send({ message: 'error' })
                                 }
-                                if (image) {
-                                    fs.unlinkSync('./public' + oldImage)//delete file
-                                }
+                                // if (image) {
+                                //     fs.unlinkSync('./public' + oldImage)//delete file
+                                // }
                                 return res.status(200).send(results)
                             })
                         }

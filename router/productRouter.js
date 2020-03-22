@@ -17,6 +17,7 @@ router.get('/getCategories', productController.getCategories)
 
 router.get('/getStock', productController.getStock);
 router.get('/getStockDetail/:id', productController.getStockDetail);
-router.post('/addStock', productController.addStock);
+router.post('/addStock', productController.addeditStock);
+router.post('/editStock', productController.addeditStock);
 
 module.exports = router;

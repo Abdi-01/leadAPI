@@ -4,6 +4,7 @@ const cartController = require('./cartController')
 const transactionController = require('./transactionController')
 const rajaOngkirCOntroller = require('./rajaOngkirController')
 const resultsCOntroller = require('./resultsController')
+const chatController = require('./chatController')
 
 module.exports = {
     userController,
@@ -11,5 +12,6 @@ module.exports = {
     cartController,
     transactionController,
     rajaOngkirCOntroller,
-    resultsCOntroller
+    resultsCOntroller,
+    chatController
 }

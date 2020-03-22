@@ -3,8 +3,8 @@ const { uploader } = require('../helper/uploader');
 const fs = require('fs');
 module.exports = {
     addToCart: (req, res) => {
-        let sql = `INSERT INTO tb_cart (userID,productID,stockID,qty,price) values ?;`
-        db.query(sql, [req.body.order], (err, results) => {
+        let sqlInsert = `INSERT INTO tb_cart (userID,productID,stockID,qty,price) values ?;`
+        db.query(sqlInsert, [req.body.order], (err, results) => {
             if (err) {
                 return res.status(500).send(err)
             }

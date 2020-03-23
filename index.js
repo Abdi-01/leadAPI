@@ -5,7 +5,7 @@ const bodyParser = require('body-parser')
 const cors = require('cors')
 const bearerToken = require('express-bearer-token');//setiap ada token yang terdapat pada front end akan dijadikan req.user
 
-const port = 2020
+const port = process.env.PORT || 2020
 
 const app = express()
 app.use(bodyParser.json())
@@ -21,6 +21,10 @@ var arrMsg = []
 var userCount = 0
 app.io = io
 app.arrMsg = arrMsg
+
+app.get('/', (req, res) => {
+  res.send('Welcome To Lead API')
+})
 
 const { userRouter, productRouter, cartRouter, transactionRouter, rajaOngkirRouter, resultsRouter, chatRouter } = require('./router')
 

@@ -20,11 +20,11 @@ module.exports = {
         let hashPassword = Crypto.createHmac("sha256", "uniqueKey").update(password).digest("hex")
         // console.log(hashPassword)
         let sql = ''
-        if (username.includes("@") === false) {
-            sql = `SELECT * FROM tb_users where username='${username}' and password='${hashPassword}';`
-        } else {
-            sql = `SELECT * FROM tb_users where email='${username}' and password='${hashPassword}';`
-        }
+        sql = `SELECT * FROM tb_users where username='${username}' and password='${hashPassword}';`
+        // if (username.includes("@") === false) {
+        // } else {
+        //     sql = `SELECT * FROM tb_users where email='${username}' and password='${hashPassword}';`
+        // }
         db.query(sql, (err, results) => {
             if (err) {
                 res.status(500).send(err)

@@ -72,8 +72,7 @@ module.exports = {
         }
     },
     addeditStock: (req, res) => {
-        let sql = `INSERT INTO tb_stock (id, productID, sizeID, stock) values ? 
-                    on duplicate key update stock=values(stock);`
+        let sql = `INSERT INTO tb_stock (id, productID, sizeID, stock) values ? on duplicate key update stock=values(stock);`
         db.query(sql, [req.body.stock], (err, results) => {
             if (err) {
                 console.log(err)
@@ -112,12 +111,12 @@ module.exports = {
         if (req.query.category === 'All') {
             sql = `select  p.id, p.name,p.imagepath,m.material,p.description,p.price
             from tb_products p join tb_materials m
-            on p.materialID = m.id;`
+            on p.materialID = m.id order by p.id asc;`
         } else {
             sql = `select  p.id, p.name,p.imagepath,m.material,p.description,p.price,
             c.category from tb_products p join tb_materials m
             on p.materialID = m.id join tb_productcat pc on p.id=pc.productID
-            join tb_categories c on c.id = pc.categoryID where c.category = '${req.query.category}';`
+            join tb_categories c on c.id = pc.categoryID where c.category = '${req.query.category}' order by p.id asc;`
         }
         db.query(sql, (err, results) => {
             if (err) {
@@ -127,7 +126,7 @@ module.exports = {
         });
     },
     getProductWithLimit: (req, res) => {
-        let sql = `select  p.id, p.name,p.imagepath,m.material,p.description,p.price
+        let sql = `select  p.id, p.name,p.imagepath,p.materialID,m.material,p.description,p.price
         from tb_products p join tb_materials m
         on p.materialID = m.id LIMIT ${req.params.start},5;`
         db.query(sql, (err, results) => {
@@ -136,7 +135,6 @@ module.exports = {
             }
             return res.status(200).send(results)
         });
-
     },
     getAllSize: (req, res) => {
         // console.log(req.query)
